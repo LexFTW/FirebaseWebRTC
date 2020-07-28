@@ -69,11 +69,42 @@ const createPeerConnection = async() => {
     const roomId = await addOfferInRoom(rooms, offer);
 
     document.querySelector('#roomId').innerText = roomId;
+
+    peerConnection.addEventListener('track', event => {
+        console.log('Got remote track: ', event.streams[0]);
+
+        event.streams[0].getTracks().forEach((track) => {
+            remoteStream.addTrack = track;
+        });
+    });
+
+    rooms.onSnapshot(async snapshot => {
+        const data = snapshot.data();
+        if (!peerConnection.currentRemoteDescription && data.answer) {
+            const sessiondescription = new RTCSessionDescription(data.answer);
+            await peerConnection.setRemoteDescription(sessiondescription);
+        }
+    });
+
+    const join = rooms.collection('joinCandidates');
+
+    join.onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(async change => {
+            if (change.type === 'added') {
+                let data = change.doc.data();
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+            }
+        });
+    });
+
+    displayStream();
 }
 
 const joinRoom = async() => {
+    const id = prompt('Room ID');
+
     firestore = firebase.firestore();
-    const rooms = firestore.collection('rooms').doc('XR24cMT3c9awvdwVVDdL');
+    const rooms = firestore.collection('rooms').doc(id);
     const snapshot = await rooms.get();
 
     if (snapshot.exists) {
@@ -101,9 +132,28 @@ const joinRoom = async() => {
 
         rooms.update(roomAnswer);
 
+        peerConnection.addEventListener('track', event => {
+            console.log('Got remote track: ', event.streams[0]);
+
+            event.streams[0].getTracks().forEach((track) => {
+                remoteStream.addTrack = track;
+            });
+        });
+
+        const host = rooms.collection('hostCandidates');
+
+        host.onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(async change => {
+                if (change.type === 'added') {
+                    let data = change.doc.data();
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+                }
+            });
+        });
+
+        displayStream();
+
     }
-
-
 
 }
 
