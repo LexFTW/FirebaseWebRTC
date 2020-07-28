@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/7.13.1/firebase-app.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/7.13.1/firebase-firestore.js"></script>
+    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/init.js"></script>
+
+    <script src="./app.js"></script>
+    <style>
+        * {
+            font-family: Roboto, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <span id="roomId"></span>
+    </div>
+    <button id="btnConnection">Iniciar</button>
+    <button id="btnRoom">Crear Sala</button>
+    <button id="btnJoin">Unirse a una Sala</button>
+    <div>
+        <video id="localStream" muted autoplay playsinline></video>
+        <video id="remoteStream" autoplay playsinline></video>
+    </div>
+</body>
+
+</html>
