@@ -22,8 +22,9 @@ let peerConnection = null;
 let firestore = null;
 
 window.onload = () => {
-    document.querySelector('#btnConnection').addEventListener('click', connectDevices)
-    document.querySelector('#btnRoom').addEventListener('click', createPeerConnection)
+    document.querySelector('#btnConnection').addEventListener('click', connectDevices);
+    document.querySelector('#btnRoom').addEventListener('click', createPeerConnection);
+    document.querySelector('#btnJoin').addEventListener('click', joinRoom);
 }
 
 const openMediaDevices = (configuration) => {
@@ -68,6 +69,41 @@ const createPeerConnection = async() => {
     const roomId = await addOfferInRoom(rooms, offer);
 
     document.querySelector('#roomId').innerText = roomId;
+}
+
+const joinRoom = async() => {
+    firestore = firebase.firestore();
+    const rooms = firestore.collection('rooms').doc('XR24cMT3c9awvdwVVDdL');
+    const snapshot = await rooms.get();
+
+    if (snapshot.exists) {
+        peerConnection = new RTCPeerConnection(iceConfigs);
+
+        registerPeerConnectionListeners();
+
+        addTracksOnPeerConnection(localStream);
+
+        candidates = rooms.collection('joinCandidates');
+        addCandidates(candidates);
+
+        const offer = snapshot.data().offer;
+        peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        const roomAnswer = {
+            'answer': {
+                type: answer.type,
+                sdp: answer.sdp
+            },
+        };
+
+        rooms.update(roomAnswer);
+
+    }
+
+
 
 }
 
