@@ -14,23 +14,23 @@
     <script defer src="/__/firebase/init.js"></script>
 
     <script src="./app.js"></script>
-    <style>
-        * {
-            font-family: Roboto, sans-serif;
-        }
-    </style>
+    <link rel="stylesheet" href="./main.css">
 </head>
 
 <body>
     <div>
         <span id="roomId"></span>
     </div>
-    <button id="btnConnection">Iniciar</button>
-    <button id="btnRoom">Crear Sala</button>
-    <button id="btnJoin">Unirse a una Sala</button>
-    <div>
-        <video id="localStream" muted autoplay playsinline></video>
-        <video id="remoteStream" autoplay playsinline></video>
+    <div style="display: flex;">
+        <div id="buttons">
+            <button id="btnConnection">Iniciar</button>
+            <button id="btnRoom">Crear Sala</button>
+            <button id="btnJoin">Unirse a una Sala</button>
+        </div>
+        <div>
+            <video id="localStream" muted autoplay playsinline></video>
+            <video id="remoteStream" autoplay playsinline></video>
+        </div>
     </div>
 </body>
 
