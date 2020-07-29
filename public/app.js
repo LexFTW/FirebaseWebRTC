@@ -47,7 +47,7 @@ const displayStream = () => {
 const addTracksOnPeerConnection = (stream) => {
     stream.getTracks().forEach((track) => {
         peerConnection.addTrack(track, stream);
-    })
+    });
 }
 
 const createPeerConnection = async() => {
@@ -55,6 +55,7 @@ const createPeerConnection = async() => {
     peerConnection = new RTCPeerConnection(iceConfigs); // Instancia de la interface RTCPeerConnection
 
     registerPeerConnectionListeners(); // Añado los listeners para los cambios de estado de la conexión y los ICE Candidate
+    peerConnectionTrackListener();
 
     addTracksOnPeerConnection(localStream); // Añado las pistas locales a la conexión Peer
 
@@ -70,13 +71,6 @@ const createPeerConnection = async() => {
 
     document.querySelector('#roomId').innerText = roomId;
 
-    peerConnection.addEventListener('track', event => {
-        console.log('Got remote track: ', event.streams[0]);
-
-        event.streams[0].getTracks().forEach((track) => {
-            remoteStream.addTrack = track;
-        });
-    });
 
     rooms.onSnapshot(async snapshot => {
         const data = snapshot.data();
@@ -87,17 +81,7 @@ const createPeerConnection = async() => {
     });
 
     const join = rooms.collection('joinCandidates');
-
-    join.onSnapshot(snapshot => {
-        snapshot.docChanges().forEach(async change => {
-            if (change.type === 'added') {
-                let data = change.doc.data();
-                await peerConnection.addIceCandidate(new RTCIceCandidate(data));
-            }
-        });
-    });
-
-    displayStream();
+    remoteCandidatesListener(join);
 }
 
 const joinRoom = async() => {
@@ -111,6 +95,7 @@ const joinRoom = async() => {
         peerConnection = new RTCPeerConnection(iceConfigs);
 
         registerPeerConnectionListeners();
+        peerConnectionTrackListener();
 
         addTracksOnPeerConnection(localStream);
 
@@ -118,7 +103,7 @@ const joinRoom = async() => {
         addCandidates(candidates);
 
         const offer = snapshot.data().offer;
-        peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
@@ -132,29 +117,31 @@ const joinRoom = async() => {
 
         rooms.update(roomAnswer);
 
-        peerConnection.addEventListener('track', event => {
-            console.log('Got remote track: ', event.streams[0]);
-
-            event.streams[0].getTracks().forEach((track) => {
-                remoteStream.addTrack = track;
-            });
-        });
-
         const host = rooms.collection('hostCandidates');
-
-        host.onSnapshot(snapshot => {
-            snapshot.docChanges().forEach(async change => {
-                if (change.type === 'added') {
-                    let data = change.doc.data();
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(data));
-                }
-            });
-        });
-
-        displayStream();
-
+        remoteCandidatesListener(host);
     }
 
+}
+
+const peerConnectionTrackListener = () => {
+    peerConnection.addEventListener('track', event => {
+        console.log('Got remote track: ', event.streams[0]);
+
+        event.streams[0].getTracks().forEach((track) => {
+            remoteStream.addTrack(track);
+        });
+    });
+}
+
+const remoteCandidatesListener = (candidates) => {
+    candidates.onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(async change => {
+            if (change.type === 'added') {
+                let data = change.doc.data();
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+            }
+        });
+    });
 }
 
 const addCandidates = (candidates) => {
@@ -199,7 +186,7 @@ const connectDevices = async() => {
     }
 }
 
-function registerPeerConnectionListeners() {
+const registerPeerConnectionListeners = () => {
     peerConnection.addEventListener('icegatheringstatechange', () => {
         console.log(
             `ICE gathering state changed: ${peerConnection.iceGatheringState}`);
